@@ -1,0 +1,182 @@
+{
+	"dimensionHeaders": [
+		{
+			"name": "city"
+		},
+		{
+			"name": "country"
+		}
+	],
+	"metricHeaders": [
+		{
+			"name": "activeUsers",
+			"type": "TYPE_INTEGER"
+		},
+		{
+			"name": "sessions",
+			"type": "TYPE_INTEGER"
+		}
+	],
+	"rows": [
+		{
+			"dimensionValues": [
+				{
+					"value": "(not set)"
+				},
+				{
+					"value": "United States"
+				}
+			],
+			"metricValues": [
+				{
+					"value": "3"
+				},
+				{
+					"value": "3"
+				}
+			]
+		},
+		{
+			"dimensionValues": [
+				{
+					"value": "(not set)"
+				},
+				{
+					"value": "(not set)"
+				}
+			],
+			"metricValues": [
+				{
+					"value": "2"
+				},
+				{
+					"value": "2"
+				}
+			]
+		},
+		{
+			"dimensionValues": [
+				{
+					"value": "Ashburn"
+				},
+				{
+					"value": "United States"
+				}
+			],
+			"metricValues": [
+				{
+					"value": "2"
+				},
+				{
+					"value": "2"
+				}
+			]
+		},
+		{
+			"dimensionValues": [
+				{
+					"value": "Ciudad Real"
+				},
+				{
+					"value": "Spain"
+				}
+			],
+			"metricValues": [
+				{
+					"value": "1"
+				},
+				{
+					"value": "1"
+				}
+			]
+		},
+		{
+			"dimensionValues": [
+				{
+					"value": "Los Angeles"
+				},
+				{
+					"value": "United States"
+				}
+			],
+			"metricValues": [
+				{
+					"value": "1"
+				},
+				{
+					"value": "1"
+				}
+			]
+		},
+		{
+			"dimensionValues": [
+				{
+					"value": "Moscow"
+				},
+				{
+					"value": "Russia"
+				}
+			],
+			"metricValues": [
+				{
+					"value": "1"
+				},
+				{
+					"value": "1"
+				}
+			]
+		},
+		{
+			"dimensionValues": [
+				{
+					"value": "New York"
+				},
+				{
+					"value": "United States"
+				}
+			],
+			"metricValues": [
+				{
+					"value": "1"
+				},
+				{
+					"value": "1"
+				}
+			]
+		}
+	],
+	"rowCount": 7,
+	"metadata": {
+		"currencyCode": "EUR",
+		"timeZone": "Europe/Madrid"
+	},
+	"kind": "analyticsData#runReport",
+	"ADFWebActivityResponseHeaders": {
+		"Vary": "X-Origin;Referer;Origin;Accept-Encoding",
+		"X-XSS-Protection": "0",
+		"X-Frame-Options": "SAMEORIGIN",
+		"X-Content-Type-Options": "nosniff",
+		"Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+		"Transfer-Encoding": "chunked",
+		"Accept-Ranges": "none",
+		"Cache-Control": "private",
+		"Date": "Mon, 09 Sep 2024 12:08:10 GMT",
+		"Server": "ESF",
+		"Content-Type": "application/json; charset=UTF-8"
+	},
+	"effectiveIntegrationRuntime": "AutoResolveIntegrationRuntime (East US)",
+	"executionDuration": 1,
+	"durationInQueue": {
+		"integrationRuntimeQueue": 1
+	},
+	"billingReference": {
+		"activityType": "ExternalActivity",
+		"billableDuration": [
+			{
+				"meterType": "AzureIR",
+				"duration": 0.016666666666666666,
+				"unit": "Hours"
+			}
+		]
+	}
+}

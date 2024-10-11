@@ -1,0 +1,80 @@
+import os
+import json
+import time
+import logging
+import jwt
+from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
+import azure.functions as func
+
+# Función para obtener el secreto desde Key Vault
+def get_secret_from_keyvault(vault_url, secret_name):
+    try:
+        # Autenticar utilizando DefaultAzureCredential (Managed Identity en Azure)
+        credential = DefaultAzureCredential()
+
+        # Crear el cliente para acceder al Key Vault
+        client = SecretClient(vault_url=vault_url, credential=credential)
+
+        # Obtener el secreto del Key Vault
+        secret = client.get_secret(secret_name)
+        return secret.value
+
+    except Exception as e:
+        logging.error(f"Error al obtener el secreto de Key Vault: {str(e)}")
+        raise
+
+# Función para generar un JWT para Google Analytics
+def create_jwt(client_email, private_key, scopes):
+    now = int(time.time())
+    claim = {
+        'iss': client_email,
+        'scope': ' '.join(scopes),
+        'aud': 'https://oauth2.googleapis.com/token',  # Audiencia para Google OAuth2
+        'exp': now + 3600,  # Token válido por 1 hora
+        'iat': now
+    }
+    # Firmar el JWT con la clave privada usando el algoritmo RS256
+    return jwt.encode(claim, private_key, algorithm='RS256')
+
+# Ruta HTTP para obtener el JWT
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+
+@app.route(route="getjwt")
+def getjwt(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Solicitud recibida para generar JWT.')
+
+    try:
+        # Obtener la URL del Key Vault y el nombre del secreto desde variables de entorno
+        vault_url = os.getenv('VAULT_URL')
+        secret_name = os.getenv('SECRET_NAME')
+
+        if not vault_url or not secret_name:
+            return func.HttpResponse(
+                "Faltan configuraciones de entorno para VAULT_URL o SECRET_NAME",
+                status_code=500
+            )
+
+        # Obtener el secreto (que es un JSON con las credenciales de Google) del Key Vault
+        secret_value = get_secret_from_keyvault(vault_url, secret_name)
+
+        # Parsear el JSON del secreto para obtener los parámetros necesarios
+        serviceAccountInfo = json.loads(secret_value)
+
+        # Crear el JWT usando los datos obtenidos del secreto (para Google Analytics)
+        jwt_token = create_jwt(
+            serviceAccountInfo['client_email'],
+            serviceAccountInfo['private_key'],
+            ['https://www.googleapis.com/auth/analytics.readonly']  # Scope para la API de Google Analytics
+        )
+
+        # Retornar el JWT en una respuesta JSON
+        return func.HttpResponse(
+            json.dumps({'jwt': jwt_token}),
+            mimetype="application/json",
+            status_code=200
+        )
+
+    except Exception as e:
+        logging.error(f"Error occurred: {str(e)}")
+        return func.HttpResponse(f"Error: {str(e)}", status_code=500)

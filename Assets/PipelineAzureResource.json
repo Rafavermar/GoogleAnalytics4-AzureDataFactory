@@ -1,0 +1,384 @@
+{
+    "name": "pipeline1",
+    "properties": {
+        "activities": [
+            {
+                "name": "Get KeyVault Info",
+                "type": "WebActivity",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "method": "GET",
+                    "headers": {
+                        "Content-Type": "application/json"
+                    },
+                    "url": "https://ga2az.vault.azure.net/secrets/GAAuthToken?api-version=7.0",
+                    "authentication": {
+                        "type": "MSI",
+                        "resource": "https://vault.azure.net"
+                    }
+                }
+            },
+            {
+                "name": "GetAccesstoken",
+                "type": "WebActivity",
+                "dependsOn": [
+                    {
+                        "activity": "JWT",
+                        "dependencyConditions": [
+                            "Completed"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "method": "POST",
+                    "headers": {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    "url": "https://oauth2.googleapis.com/token",
+                    "body": {
+                        "value": "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=@{variables('jwt')}\n",
+                        "type": "Expression"
+                    }
+                }
+            },
+            {
+                "name": "GetJWT",
+                "type": "AzureFunctionActivity",
+                "dependsOn": [
+                    {
+                        "activity": "Secrets",
+                        "dependencyConditions": [
+                            "Completed"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "functionName": "getjwt",
+                    "method": "GET"
+                },
+                "linkedServiceName": {
+                    "referenceName": "AzureFunction1",
+                    "type": "LinkedServiceReference"
+                }
+            },
+            {
+                "name": "Secrets",
+                "type": "SetVariable",
+                "dependsOn": [
+                    {
+                        "activity": "Get KeyVault Info",
+                        "dependencyConditions": [
+                            "Completed"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "variableName": "parameters",
+                    "value": {
+                        "value": "{\n  \"client_id\": \"@{json(activity('Get KeyVault Info').output.value).client_id}\",\n  \"client_email\": \"@{json(activity('Get KeyVault Info').output.value).client_email}\",\n  \"private_key\": \"@{replace(json(activity('Get KeyVault Info').output.value).private_key, '\\\\n', '\\n')}\"\n}\n",
+                        "type": "Expression"
+                    }
+                }
+            },
+            {
+                "name": "JWT",
+                "type": "SetVariable",
+                "dependsOn": [
+                    {
+                        "activity": "GetJWT",
+                        "dependencyConditions": [
+                            "Completed"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "variableName": "jwt",
+                    "value": {
+                        "value": "@activity('GetJWT').output.jwt\n",
+                        "type": "Expression"
+                    }
+                }
+            },
+            {
+                "name": "AccessToken",
+                "type": "SetVariable",
+                "dependsOn": [
+                    {
+                        "activity": "GetAccesstoken",
+                        "dependencyConditions": [
+                            "Completed"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "variableName": "accessToken",
+                    "value": {
+                        "value": "@activity('GetAccesstoken').output.access_token",
+                        "type": "Expression"
+                    }
+                }
+            },
+            {
+                "name": "GetGAData",
+                "type": "WebActivity",
+                "dependsOn": [
+                    {
+                        "activity": "AccessToken",
+                        "dependencyConditions": [
+                            "Completed"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "method": "POST",
+                    "headers": {
+                        "Authorization": {
+                            "value": "Bearer @{variables('accessToken')}",
+                            "type": "Expression"
+                        },
+                        "Accept": "application/json"
+                    },
+                    "url": "https://analyticsdata.googleapis.com/v1beta/properties/352970492:runReport",
+                    "body": {
+                        "dateRanges": [
+                            {
+                                "startDate": "2024-08-25",
+                                "endDate": "today"
+                            }
+                        ],
+                        "dimensions": [
+                            {
+                                "name": "city"
+                            },
+                            {
+                                "name": "country"
+                            }
+                        ],
+                        "metrics": [
+                            {
+                                "name": "activeUsers"
+                            },
+                            {
+                                "name": "sessions"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "name": "FlattenJSONtoParquet",
+                "type": "ExecuteDataFlow",
+                "dependsOn": [
+                    {
+                        "activity": "Copy data1",
+                        "dependencyConditions": [
+                            "Completed"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "dataflow": {
+                        "referenceName": "dataflow1",
+                        "type": "DataFlowReference"
+                    },
+                    "compute": {
+                        "coreCount": 8,
+                        "computeType": "General"
+                    },
+                    "traceLevel": "Fine"
+                }
+            },
+            {
+                "name": "Copy data1",
+                "type": "Copy",
+                "dependsOn": [
+                    {
+                        "activity": "outputjson",
+                        "dependencyConditions": [
+                            "Completed"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "timeout": "0.12:00:00",
+                    "retry": 0,
+                    "retryIntervalInSeconds": 30,
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "source": {
+                        "type": "DelimitedTextSource",
+                        "additionalColumns": [
+                            {
+                                "name": "source",
+                                "value": {
+                                    "value": "@variables('outputjson')",
+                                    "type": "Expression"
+                                }
+                            }
+                        ],
+                        "storeSettings": {
+                            "type": "AzureBlobStorageReadSettings",
+                            "recursive": true,
+                            "enablePartitionDiscovery": false
+                        },
+                        "formatSettings": {
+                            "type": "DelimitedTextReadSettings"
+                        }
+                    },
+                    "sink": {
+                        "type": "DelimitedTextSink",
+                        "storeSettings": {
+                            "type": "AzureBlobStorageWriteSettings",
+                            "copyBehavior": "PreserveHierarchy"
+                        },
+                        "formatSettings": {
+                            "type": "DelimitedTextWriteSettings",
+                            "quoteAllText": true,
+                            "fileExtension": ".txt"
+                        }
+                    },
+                    "enableStaging": false,
+                    "translator": {
+                        "type": "TabularTranslator",
+                        "mappings": [
+                            {
+                                "source": {
+                                    "name": "source",
+                                    "type": "String"
+                                },
+                                "sink": {
+                                    "ordinal": 1
+                                }
+                            }
+                        ],
+                        "typeConversion": true,
+                        "typeConversionSettings": {
+                            "allowDataTruncation": true,
+                            "treatBooleanAsNumber": false
+                        }
+                    }
+                },
+                "inputs": [
+                    {
+                        "referenceName": "DelimitedText1",
+                        "type": "DatasetReference"
+                    }
+                ],
+                "outputs": [
+                    {
+                        "referenceName": "DelimitedText2",
+                        "type": "DatasetReference"
+                    }
+                ]
+            },
+            {
+                "name": "outputjson",
+                "type": "SetVariable",
+                "dependsOn": [
+                    {
+                        "activity": "GetGAData",
+                        "dependencyConditions": [
+                            "Completed"
+                        ]
+                    }
+                ],
+                "policy": {
+                    "secureOutput": false,
+                    "secureInput": false
+                },
+                "userProperties": [],
+                "typeProperties": {
+                    "variableName": "outputjson",
+                    "value": {
+                        "value": "@{activity('GetGAData').output}",
+                        "type": "Expression"
+                    }
+                }
+            }
+        ],
+        "variables": {
+            "client_id": {
+                "type": "String"
+            },
+            "client_email": {
+                "type": "String"
+            },
+            "private_key": {
+                "type": "String"
+            },
+            "parameters": {
+                "type": "String"
+            },
+            "jwt": {
+                "type": "String"
+            },
+            "accessToken": {
+                "type": "String"
+            },
+            "outputjson": {
+                "type": "String"
+            }
+        },
+        "annotations": [],
+        "lastPublishTime": "2024-09-18T21:01:59Z"
+    },
+    "type": "Microsoft.DataFactory/factories/pipelines"
+}
