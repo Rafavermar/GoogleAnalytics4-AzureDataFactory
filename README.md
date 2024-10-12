@@ -39,8 +39,5 @@ The extraction process automates the OAuth2.0 authentication using a custom Azur
 For those who need a quick, script-based solution, I’ve developed a Python script that automates the entire process. This script is available under a [BuyMeACoffee paywall](
 buymeacoffee.com/rafael.vera/e/315735), providing an efficient alternative to the Azure-based pipeline.
 
-# License
-This project is licensed under the MIT License - see the LICENSE file for details.
-
 # Contributing
 Feel free to submit issues or pull requests to improve this guide or code.
