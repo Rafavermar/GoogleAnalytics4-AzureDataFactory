@@ -36,8 +36,7 @@ The extraction process automates the OAuth2.0 authentication using a custom Azur
 - **StepByStepGA2Az.pdf**: Complete step-by-step guide to replicate this process.
 
 # Quickstart with Python Script (BuyMeACoffee)
-For those who need a quick, script-based solution, I’ve developed a Python script that automates the entire process. This script is available under a [BuyMeACoffee paywall](
-buymeacoffee.com/rafael.vera/e/315735), providing an efficient alternative to the Azure-based pipeline.
+For those who need a quick, script-based solution, I’ve developed a Python script that automates the entire process. This script is available under a [BuyMeACoffee paywall](https://buymeacoffee.com/rafael.vera/e/315735), providing an efficient alternative to the Azure-based pipeline.
 
 # Contributing
 Feel free to submit issues or pull requests to improve this guide or code.
